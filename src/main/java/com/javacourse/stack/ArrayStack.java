@@ -48,6 +48,10 @@ public class ArrayStack<ItemTypeT extends Comparable<ItemTypeT>> implements Extr
 		ItemTypeT result = this.items[indexItem];
 		this.items[indexItem] = null;
 		indexItem--;
+		if (indexItem == -1) {
+			this.maxItems = new LinkedStack<ItemTypeT>();
+			this.minItems = new LinkedStack<ItemTypeT>();
+		}
 
 		if (this.indexItem < items.length - this.SEGMENT_LEN)
 				this.items = Arrays.copyOf(this.items, this.items.length - this.SEGMENT_LEN);
