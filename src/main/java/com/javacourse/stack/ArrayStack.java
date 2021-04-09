@@ -2,26 +2,40 @@ package com.javacourse.stack;
 
 import java.lang.reflect.Array;
 import java.util.Arrays;
+import java.util.Stack;
 
 /**
  * Реализация стека на базе массива объектов,
  * с возвомжностью поиска наименьшего/наибольшего значения
  */
 public class ArrayStack<ItemTypeT extends Comparable<ItemTypeT>> implements ExtremumStack<ItemTypeT> {
-	private static final int SEGMENT_LEN = 10;
+	private static final int DEFAULT_LEN = 10;
 	private ItemTypeT[] items;
 	private int indexItem;
-	private LinkedStack<ItemTypeT> maxItems;
-	private LinkedStack<ItemTypeT> minItems;
+	private Stack<ItemTypeT> maxItems;
+	private Stack<ItemTypeT> minItems;
 
 	public ArrayStack() {
 		this.indexItem = -1;
-		this.maxItems = new LinkedStack<ItemTypeT>();
-		this.minItems = new LinkedStack<ItemTypeT>();
+		this.maxItems = new Stack<ItemTypeT>();
+		this.minItems = new Stack<ItemTypeT>();
 	}
 
-	public int compare(ItemTypeT a, ItemTypeT b) {
-		return a.compareTo(b);
+	private void expandArray() {
+		if (this.indexItem >= items.length)
+				this.items = Arrays.copyOf(this.items, this.items.length * 2);
+	}
+
+	private void reduceArray() {
+
+		/*
+		* Массив уменьшится, если его наполнение составит 25%.
+		* Нужно для избежания частого копирования на границе массива.
+		*/
+		if (this.indexItem >= DEFAULT_LEN / 2 && this.indexItem <= this.items.length / 4) {
+			int newLen = this.items.length / 2;
+			this.items = Arrays.copyOf(this.items, newLen);
+		}
 	}
 
 	@Override
@@ -29,12 +43,14 @@ public class ArrayStack<ItemTypeT extends Comparable<ItemTypeT>> implements Extr
 		if (this.indexItem == -1) {
 			this.maxItems.push(item);
 			this.minItems.push(item);
-			this.items = (ItemTypeT[]) Array.newInstance(item.getClass(), this.SEGMENT_LEN);
+			this.items = (ItemTypeT[]) Array.newInstance(item.getClass(), DEFAULT_LEN);
 		}
 		this.indexItem++;
-		if (this.indexItem >= items.length)
-				this.items = Arrays.copyOf(this.items, this.items.length + this.SEGMENT_LEN);
+		expandArray();
 		this.items[indexItem] = item;
+
+
+		if (this.indexItem == 0) return;
 		if (item != null && this.maxItems.peek().compareTo(item) <= 0) this.maxItems.push(item);
 		if (item != null && this.minItems.peek().compareTo(item) >= 0) this.minItems.push(item);
 	}
@@ -42,19 +58,13 @@ public class ArrayStack<ItemTypeT extends Comparable<ItemTypeT>> implements Extr
 	@Override
 	public ItemTypeT pop() {
 		if (this.indexItem == -1) throw new RuntimeException("Empty Stack Exception");
-		if (this.items[indexItem] == maxItems.peek()) maxItems.pop();
-		if (this.items[indexItem] == minItems.peek()) minItems.pop();
-
 		ItemTypeT result = this.items[indexItem];
 		this.items[indexItem] = null;
 		indexItem--;
-		if (indexItem == -1) {
-			this.maxItems = new LinkedStack<ItemTypeT>();
-			this.minItems = new LinkedStack<ItemTypeT>();
-		}
 
-		if (this.indexItem < items.length - this.SEGMENT_LEN)
-				this.items = Arrays.copyOf(this.items, this.items.length - this.SEGMENT_LEN);
+		if (result == maxItems.peek()) maxItems.pop();
+		if (result == minItems.peek()) minItems.pop();
+		reduceArray();
 		return result;
 	}
 

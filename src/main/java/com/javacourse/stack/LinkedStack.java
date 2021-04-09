@@ -1,14 +1,14 @@
 package com.javacourse.stack;
 
-import java.util.Comparator;
-import java.util.ArrayList;
+import java.util.Stack;
 /**
  * Реализация стека на базе односвязного списка, с возможностью
  * поиска наибольшего и наименьшего элемента стека
  */
 public class LinkedStack<ItemTypeT extends Comparable<ItemTypeT>> implements ExtremumStack<ItemTypeT> {
 	private Item<ItemTypeT> top;
-	private ArrayList<Item<ItemTypeT>> items;
+	private Stack<ItemTypeT> maxItems;
+	private Stack<ItemTypeT> minItems;
 
 	private class Item<ItemTypeT extends Comparable<ItemTypeT>> {
 		private ItemTypeT currentItem;
@@ -32,47 +32,35 @@ public class LinkedStack<ItemTypeT extends Comparable<ItemTypeT>> implements Ext
 		}
 	}
 
-	private class ItemCompare implements Comparator<Item<ItemTypeT>> {
-
-		@Override
-		public int compare(Item<ItemTypeT> a, Item<ItemTypeT> b) {
-			if (a.peek() == null) return -1;
-			if (b.peek() == null) return 1;
-			return a.peek().compareTo(b.peek());
-		}
-	}
-
 	/**
 	 * Конструктор без аргументов должен создаавать валидный стек
 	 */
 	public LinkedStack(){
-		items = new ArrayList<Item<ItemTypeT>>();
+		this.maxItems = new Stack<ItemTypeT>();
+		this.minItems = new Stack<ItemTypeT>();
 	}
 
 	@Override
 	public void push(ItemTypeT item) {
+		if (this.top == null) {
+			this.maxItems.push(item);
+			this.minItems.push(item);
+		} else {
+			if (item != null && item.compareTo(this.maxItems.peek()) >= 0) this.maxItems.push(item);
+			if (item != null && item.compareTo(this.minItems.peek()) <= 0) this.minItems.push(item);
+		}
 		this.top = new Item<ItemTypeT>(item, this.top);
-
-		if (this.top.peek() != null && items.stream().noneMatch(u -> u.peek().equals(this.top.peek())))
-			items.add(this.top);
-
-		items.sort(new ItemCompare());
 	}
 
 	@Override
 	public ItemTypeT pop() {
 		if (this.top == null) throw new RuntimeException("Empty Stack Exception");
 		ItemTypeT result = this.top.peek();
-		if (!this.top.first()) {
-			int index = items.indexOf(this.top);
-			if (index != -1) {
-				items.remove(index);
-			}
-			this.top = this.top.getPrev();
-		} else {
-			this.top = null;
-			this.items.clear();
-		}
+		if (!this.top.first()) this.top = this.top.getPrev();
+		else this.top = null;
+
+		if (result == maxItems.peek()) maxItems.pop();
+		if (result == minItems.peek()) minItems.pop();
 		return result;
 	}
 
@@ -85,12 +73,12 @@ public class LinkedStack<ItemTypeT extends Comparable<ItemTypeT>> implements Ext
 	@Override
 	public ItemTypeT min() {
 		if (this.top == null) throw new RuntimeException("Empty Stack Exception");
-		return items.get(0).peek();
+		return this.minItems.peek();
 	}
 
 	@Override
 	public ItemTypeT max() {
 		if (this.top == null) throw new RuntimeException("Empty Stack Exception");
-		return items.get(items.size() - 1).peek();
+		return this.maxItems.peek();
 	}
 }
